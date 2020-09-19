@@ -21,6 +21,10 @@
   "homepage": "https://github.com/smithe68/GrizzHack5#readme",
   "dependencies": {
     "@types/jquery": "^3.5.1",
-    "jquery": "^3.5.1"
+    "@types/socket.io": "^2.1.11",
+    "firebase": "^7.21.0",
+    "jquery": "^3.5.1",
+    "socket.io": "^2.3.0",
+    "socket.io-p2p": "^2.2.0"
   }
 }

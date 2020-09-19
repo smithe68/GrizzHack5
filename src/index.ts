@@ -23,16 +23,13 @@ class Chunk {
             this.buffer.data[i] = 255;
     }
 
-    render(ctx: CanvasRenderingContext2D) {
-        createImageBitmap(this.buffer)
-            .then((frame) => {
-                ctx.drawImage(
-                    frame,
-                    this.pos.x - camera.x,
-                    this.pos.y - camera.y
-                );
-            })
-            .catch(() => {});
+    async render(ctx: CanvasRenderingContext2D): Promise<void> {
+        const frame = await createImageBitmap(this.buffer);
+        ctx.drawImage(
+            frame,
+            this.pos.x * CHUNK_SIZE - camera.x,
+            this.pos.y * CHUNK_SIZE - camera.y
+        );
     }
 
     draw(x: number, y: number, color: Color) {
@@ -50,8 +47,9 @@ class Chunk {
     }
 }
 
-const CHUNK_SIZE: number = 128;
+const CHUNK_SIZE: number = 64;
 const CANVAS_SCALE: number = 8;
+const MAP_SIZE: number = 16;
 
 let isMouseDown: boolean = false;
 
@@ -61,14 +59,26 @@ let brushPos: Point = { x: 0, y: 0 };
 let camera: Point = { x: 0, y: 0 };
 let cameraTarget: Point = { x: 0, y: 0 };
 
+let currentTool: number = 1;
+
 let chunks: Chunk[] = [];
 
+function selectTool(tool: number) {
+    const $buttons = $("#tools button");
+    $buttons.each((i, el) => el.classList.remove("selected"));
+    $buttons[tool].classList.add("selected");
+    currentTool = tool;
+}
+
 function resizeCanvas(ctx: CanvasRenderingContext2D) {
-    const parent = ctx.canvas.parentElement;
-    if (parent !== null) {
-        ctx.canvas.width = parent.clientWidth;
-        ctx.canvas.height = parent.clientHeight;
-    }
+    ctx.canvas.width = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
+
+    // Scale canvas to make it easier to see
+    ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
+
+    // I want to see the pixels
+    ctx.imageSmoothingEnabled = false;
 }
 
 $(() => {
@@ -84,8 +94,8 @@ $(() => {
 
     $canvas.on("mousedown", () => {
         brushPos = {
-            x: mousePos.x,
-            y: mousePos.y,
+            x: mousePos.x + camera.x * CANVAS_SCALE,
+            y: mousePos.y + camera.y * CANVAS_SCALE,
         };
         isMouseDown = true;
     });
@@ -94,23 +104,32 @@ $(() => {
         isMouseDown = false;
     });
 
+    window.addEventListener("resize", () => {
+        resizeCanvas(ctx);
+    });
+
+    selectTool(currentTool);
+    $("#tools button").each((i, el) => {
+        el.addEventListener("mousedown", () => {
+            selectTool(i);
+        });
+    });
+
     // Make chunks here
-    chunks.push(new Chunk({ x: 0, y: 0 }));
+    for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+            chunks.push(new Chunk({ x: i, y: j }));
+        }
+    }
 
     // Set size of the canvas to fit the draw space
     resizeCanvas(ctx);
-
-    // Scale canvas to make it easier to see
-    ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
-
-    // Make sure there isn't any smoothing
-    ctx.imageSmoothingEnabled = false;
 
     // Start rendering loop
     requestAnimationFrame(() => loop(ctx));
 });
 
-function loop(ctx: CanvasRenderingContext2D) {
+async function loop(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -120,37 +139,106 @@ function loop(ctx: CanvasRenderingContext2D) {
     };
 
     if (isMouseDown) {
-        const red: Color = { r: 255, g: 0, b: 0, a: 255 };
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+            <string>$("#color").val()
+        );
+        let color;
+        if (result != null) {
+            color = {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16),
+                a: 1,
+            };
+        } else {
+            color = {
+                r: 0,
+                g: 0,
+                b: 0,
+                a: 1,
+            };
+        }
 
         for (let i = 0; i < 25; i++) {
-            brushPos.x += (mousePos.x - brushPos.x) * 0.1;
-            brushPos.y += (mousePos.y - brushPos.y) * 0.1;
-            chunks[0].draw(
-                brushPos.x / CANVAS_SCALE + camera.x,
-                brushPos.y / CANVAS_SCALE + camera.y,
-                red
+            brushPos.x +=
+                (mousePos.x + camera.x * CANVAS_SCALE - brushPos.x) * 0.1;
+            brushPos.y +=
+                (mousePos.y + camera.y * CANVAS_SCALE - brushPos.y) * 0.1;
+            // Select the correct chunk
+            let chunkNumX = Math.floor(
+                brushPos.x / (CHUNK_SIZE * CANVAS_SCALE)
             );
+            let chunkNumY = Math.floor(
+                brushPos.y / (CHUNK_SIZE * CANVAS_SCALE)
+            );
+
+            let chunk = chunks[chunkNumX * MAP_SIZE + chunkNumY];
+            if (
+                chunkNumX >= 0 &&
+                chunkNumX < MAP_SIZE &&
+                chunkNumY >= 0 &&
+                chunkNumY < MAP_SIZE
+            ) {
+                if (chunk !== undefined) {
+                    chunk.draw(
+                        (brushPos.x - chunkNumX * CHUNK_SIZE * CANVAS_SCALE) /
+                            CANVAS_SCALE,
+                        (brushPos.y - chunkNumY * CHUNK_SIZE * CANVAS_SCALE) /
+                            CANVAS_SCALE,
+                        color
+                    );
+                }
+            }
         }
     }
 
-    chunks[0].render(ctx);
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const pos = chunk.pos;
+        const size = CHUNK_SIZE * CANVAS_SCALE;
+
+        let lowerX = pos.x * size;
+        let upperX = pos.x * size + size;
+
+        let lowerY = pos.y * size;
+        let upperY = pos.y * size + size;
+
+        if (
+            lowerX >= camera.x * CANVAS_SCALE - size &&
+            upperX <= camera.x * CANVAS_SCALE + ctx.canvas.clientWidth + size &&
+            lowerY >= camera.y * CANVAS_SCALE - size &&
+            upperY <= camera.y * CANVAS_SCALE + ctx.canvas.clientHeight + size
+        ) {
+            await chunks[i].render(ctx);
+        }
+    }
+
+    // Draw Cursor
+    ctx.fillStyle = "black";
+    ctx.fillRect(mousePos.x / CANVAS_SCALE, mousePos.y / CANVAS_SCALE, 1, 1);
 
     requestAnimationFrame(() => loop(ctx));
 }
+$("#color").on("click", (_) => {
+    $("#popout").toggle();
+});
 
 // Get key input for moving the camera
 $(document).on("keydown", (ev) => {
-    switch (ev.keyCode) {
-        case 87:
+    const event = ev.originalEvent;
+    if (event === undefined) return;
+
+    switch (event.code) {
+        case "KeyW":
             cameraTarget.y -= 1;
             break;
-        case 83:
+        case "KeyS":
             cameraTarget.y += 1;
             break;
-        case 65:
+        case "KeyA":
             cameraTarget.x -= 1;
             break;
-        case 68:
+        case "KeyD":
             cameraTarget.x += 1;
             break;
     }

@@ -1,36 +1,48 @@
+:root {
+    --ui-color: rgb(25, 25, 25);
+}
+
 * {
     padding: 0;
     box-sizing: border-box;
     border: 0;
     margin: 0;
 
-    font-family: 'Roboto', sans-serif;
+    font-family: "Press Start 2P", sans-serif;
     color: white;
+    border-radius: 0;
 }
 
 body {
-    display: grid;
     min-height: 100vh;
-    grid-template-rows: 48px auto;
-    grid-template-columns: 48px auto;
     background: rgb(18, 18, 18);
     overflow: hidden;
+    user-select: none;
 }
 
 button {
     background: none;
 }
 
+#tools > * {
+    width: 48px;
+    height: 48px;
+}
+
 #tools {
+    position: absolute;
+    left: 0;
+    top: 0;
+
     grid-row-start: 2;
     grid-column-start: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--ui-color);
 
-    width: 100%;
+    height: 100%;
+    width: 48px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.2rem;
 
     button {
         padding: 0.25rem;
@@ -50,56 +62,46 @@ button {
     }
 }
 
-#draw-space {
-    grid-row-start: 2;
-    grid-column-start: 2;
-
+canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
-
-    canvas {
-        width: 100%;
-        height: 100%;
-    }
+    cursor: none;
 }
 
-#network {
-    grid-column: 1 / 3;
-    background: rgba(255, 255, 255, 0.2);
-    height: 100%;
+#title {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, 0) scaleX(0.7);
+    z-index: 1;
 
-    display: grid;
-    grid-template-columns: 50% 50%;
+    background: var(--ui-color);
 
-    div {
-        height: 100%;
-    }
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+}
 
-    #title {
-        display: flex;
-        justify-content: left;
-        align-items: center;
+#picker {
+    background: none;
 
-        padding-left: 1rem;
-        font-size: 1.25rem;
-    }
-
-    #session {
-        display: flex;
-        justify-content: flex-end;
-
-        #connect {
-            background: rgba(0, 0, 255, 0.3);
-            padding: 1rem;
-
-            &:hover {
-                cursor: pointer;
-                background: rgba(100, 100, 255, 0.7);
-            }
-        }
+    &:hover {
+        cursor: pointer;
+        transform: scale(1.05);
     }
 }
 
 .selected {
     background: rgba(100, 100, 255, 0.9);
+}
+
+footer {
+    position: absolute;
+    left: 0px;
+    bottom: 10px;
+    text-align: right;
+    color: rgba(0, 0, 0, 0.4);
+    transform: scaleX(0.7);
 }
