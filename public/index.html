@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./bundle.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style/style.css">
+    <title>WhiteBoard</title>
+</head>
+
+<body>
+
+    <div id="network">
+        <div id="title">GrizzHack Whiteboard</div>
+        <div id="session"><button id="connect">Connect to Session</button></div>
+    </div>
+
+    <div id="draw-space">
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div id="tools">
+        <button onclick="selectTool(0);"><img src="images/icons/select.png"></button>
+        <button onclick="selectTool(1);"><img src="images/icons/paint.png"></button>
+    </div>
+
+</body>
+
+</html>

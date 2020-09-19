@@ -1,0 +1,26 @@
+{
+  "name": "grizz-hack-whiteboard",
+  "version": "0.0.1",
+  "description": "A networked collab whiteboard",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smithe68/GrizzHack5.git"
+  },
+  "keywords": [
+    "whiteboard"
+  ],
+  "author": "Jakub Szarkowicz, Evan Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smithe68/GrizzHack5/issues"
+  },
+  "homepage": "https://github.com/smithe68/GrizzHack5#readme",
+  "dependencies": {
+    "@types/jquery": "^3.5.1",
+    "jquery": "^3.5.1"
+  }
+}
