@@ -40,7 +40,7 @@ class Chunk {
 
             let pos = (yFloor * this.buffer.width + xFloor) * 4;
 
-            this.buffer.data[pos] =  color.r;
+            this.buffer.data[pos] = color.r;
             this.buffer.data[pos + 1] = color.g;
             this.buffer.data[pos + 2] = color.b;
             this.buffer.data[pos + 3] = color.a;
@@ -48,30 +48,39 @@ class Chunk {
     }
 }
 
-// Variable declerations ------------------------------------------------
+enum Tool {
+    Move,
+    Brush,
+    Picker,
+    Eraser,
+}
+
+// Variable declarations ------------------------------------------------
+
 const CHUNK_SIZE: number = 64;
-const CANVAS_SCALE: number = 8;
-const MAP_SIZE: number = 16;
+var CANVAS_SCALE: number = 8;
+const MAP_SIZE: number = 64;
 
 let isMouseDown: boolean = false;
+let isMoving: boolean = false;
 
 let mousePos: Point = { x: 0, y: 0 };
 let brushPos: Point = { x: 0, y: 0 };
 
 let camera: Point = { x: 0, y: 0 };
 let cameraTarget: Point = { x: 0, y: 0 };
-let lastClicked: Point = {x:0,y:0};
 
-let currentTool: number = 1;
+let currentTool: Tool = Tool.Brush;
 
 let chunks: Chunk[] = [];
 
-// Function declerations -----------------------------------
+// Function declarations -----------------------------------
+
 function selectTool(tool: number) {
     const $buttons = $("#tools button");
     $buttons.each((i, el) => el.classList.remove("selected"));
     $buttons[tool].classList.add("selected");
-    currentTool = tool;
+    currentTool = <Tool>tool;
 }
 
 function resizeCanvas(ctx: CanvasRenderingContext2D) {
@@ -85,37 +94,40 @@ function resizeCanvas(ctx: CanvasRenderingContext2D) {
     ctx.imageSmoothingEnabled = false;
 }
 
-function pick(ctx: CanvasRenderingContext2D ){ //doesn't work on chunks other then 0,0
+function pick(ctx: CanvasRenderingContext2D) {
+    //doesn't work on chunks other then 0,0
 
+    let chunk = getChunk(brushPos.x, brushPos.y);
+    if (chunk == null) return;
 
-    let chunk = getChunk(mousePos.x,mousePos.y);
+    let posX =
+        (brushPos.x - chunk.pos.x * CHUNK_SIZE * CANVAS_SCALE) / CANVAS_SCALE;
 
-    let posX = (mousePos.x - chunk.pos.x * CHUNK_SIZE * CANVAS_SCALE) /
-    CANVAS_SCALE;
-
-    let posY = (mousePos.y - chunk.pos.y * CHUNK_SIZE * CANVAS_SCALE) /
-    CANVAS_SCALE;
+    let posY =
+        (brushPos.y - chunk.pos.y * CHUNK_SIZE * CANVAS_SCALE) / CANVAS_SCALE;
 
     let xFloor = Math.floor(posX);
     let yFloor = Math.floor(posY);
 
     let pos = (yFloor * chunk.buffer.width + xFloor) * 4;
-    console.log(pos);
 
     let r = chunk.buffer.data[pos];
-    let g = chunk.buffer.data[pos+1];
-    let b = chunk.buffer.data[pos+2];
+    let g = chunk.buffer.data[pos + 1];
+    let b = chunk.buffer.data[pos + 2];
 
     let colorString = "#";
-    colorString+=decimalToHex(r,2);
-    colorString+=decimalToHex(g,2);
-    colorString+=decimalToHex(b,2);
+    colorString += decimalToHex(r, 2);
+    colorString += decimalToHex(g, 2);
+    colorString += decimalToHex(b, 2);
     $("#picker").val(colorString);
 }
 
-function decimalToHex(d:number, padding:number) {
+function decimalToHex(d: number, padding: number) {
     var hex = Number(d).toString(16);
-    padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
+    padding =
+        typeof padding === "undefined" || padding === null
+            ? (padding = 2)
+            : padding;
 
     while (hex.length < padding) {
         hex = "0" + hex;
@@ -124,7 +136,7 @@ function decimalToHex(d:number, padding:number) {
     return hex;
 }
 
-function initializeChunks(){
+function initializeChunks() {
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             chunks.push(new Chunk({ x: i, y: j }));
@@ -132,122 +144,108 @@ function initializeChunks(){
     }
 }
 
-function setColor(ctx: CanvasRenderingContext2D){
-    let color;
-
-    if(currentTool === 2){
-        currentTool = 1;
-        pick(ctx);
-    }
-
-    if(currentTool === 3){
-        currentTool = 1;
-        $("#picker").val("#ffffff");
-
-        return {r:0,g:0,b:0,a:0};
-    }
-    
+function hexToRGBA() {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
-        <string>$("#picker").val());
+        <string>$("#picker").val()
+    );
 
-    if(result !== null){
+    let color: Color = { r: 0, g: 0, b: 0, a: 255 };
+
+    if (result !== null) {
         color = {
             r: parseInt(result[1], 16),
             g: parseInt(result[2], 16),
             b: parseInt(result[3], 16),
-            a: 255
+            a: 255,
         };
-    }else{
-        color = {r: 0,g: 0,b: 255,a: 1,};
     }
+
     return color;
 }
 
-function incrimentBrush(){
-        brushPos.x +=
-        (mousePos.x + camera.x * CANVAS_SCALE - brushPos.x) * 0.1;
-    brushPos.y +=
-        (mousePos.y + camera.y * CANVAS_SCALE - brushPos.y) * 0.1;
+function lerpBrushPos() {
+    brushPos.x += (mousePos.x + camera.x * CANVAS_SCALE - brushPos.x) * 0.1;
+    brushPos.y += (mousePos.y + camera.y * CANVAS_SCALE - brushPos.y) * 0.1;
 }
 
-function setCamera(){ // HMMM
-    let cameraSpeed = -.19;
-    if(currentTool === 4 && isMouseDown){
-        if(lastClicked.x<mousePos.x){
-            camera.x += cameraSpeed; 
-            cameraTarget.x += cameraSpeed;
-        }else{
-            camera.x -= cameraSpeed; 
-            cameraTarget.x -= cameraSpeed;
-        }
-        if(lastClicked.y<mousePos.y){
-            
-            camera.y += cameraSpeed; 
-            cameraTarget.y += cameraSpeed;
-        }else{
-            camera.y -= cameraSpeed; 
-            cameraTarget.y -= cameraSpeed;
-        }
+function moveCamera(ctx: CanvasRenderingContext2D) {
+    const cameraSpeed = 0.01;
+    let cameraVelocityX = 0;
+    let cameraVelocityY = 0;
+
+    if ((currentTool === 0 && isMouseDown) || isMoving) {
+        cameraVelocityX =
+            (mousePos.x - ctx.canvas.clientWidth / 2) * cameraSpeed;
+        cameraVelocityY =
+            (mousePos.y - ctx.canvas.clientHeight / 2) * cameraSpeed;
     }
-    if(cameraTarget.x<=0){
-        cameraTarget.x =0;
-    }
-    if(cameraTarget.y<=0){
-        cameraTarget.y = 0;
-    }
-    if(camera.x<=0){
-        camera.x = 0;
-    }
-    if(camera.y <= 0){
-        camera.y = 0;
-    }
-    
+
+    let upper = CHUNK_SIZE * MAP_SIZE * CANVAS_SCALE;
+
+    cameraTarget.x = clamp(
+        cameraTarget.x + cameraVelocityX,
+        0,
+        (upper - ctx.canvas.clientWidth) / CANVAS_SCALE
+    );
+
+    cameraTarget.y = clamp(
+        cameraTarget.y + cameraVelocityY,
+        0,
+        (upper - ctx.canvas.clientHeight) / CANVAS_SCALE
+    );
+
     camera = {
         x: 0.9 * camera.x + 0.1 * cameraTarget.x,
         y: 0.9 * camera.y + 0.1 * cameraTarget.y,
     };
 }
 
-function getChunk(x:number,y:number){
-    let chunkNumX = Math.floor(x / (CHUNK_SIZE * CANVAS_SCALE));
-    let chunkNumY = Math.floor(y / (CHUNK_SIZE * CANVAS_SCALE));
-
-    return chunks[chunkNumX * MAP_SIZE + chunkNumY];
+function clamp(val: number, min: number, max: number) {
+    return val < min ? min : val > max ? max : val;
 }
 
-function isVisableChunk(pos:Point,size:number,ctx:CanvasRenderingContext2D){
+function getChunk(x: number, y: number): Chunk | null {
+    let chunkNumX = Math.floor(x / (CHUNK_SIZE * CANVAS_SCALE));
+    let chunkNumY = Math.floor(y / (CHUNK_SIZE * CANVAS_SCALE));
+    if (chunkNumX * MAP_SIZE + chunkNumY < chunks.length)
+        return chunks[chunkNumX * MAP_SIZE + chunkNumY];
+    else return null;
+}
+
+function isVisibleChunk(
+    pos: Point,
+    size: number,
+    ctx: CanvasRenderingContext2D
+) {
     let lowerX = pos.x * size;
     let upperX = pos.x * size + size;
     let lowerY = pos.y * size;
     let upperY = pos.y * size + size;
 
-    return lowerX >= camera.x * CANVAS_SCALE - size &&
-    upperX <= camera.x * CANVAS_SCALE + ctx.canvas.clientWidth + size &&
-    lowerY >= camera.y * CANVAS_SCALE - size &&
-    upperY <= camera.y * CANVAS_SCALE + ctx.canvas.clientHeight + size
+    return (
+        lowerX >= camera.x * CANVAS_SCALE - size &&
+        upperX <= camera.x * CANVAS_SCALE + ctx.canvas.clientWidth + size &&
+        lowerY >= camera.y * CANVAS_SCALE - size &&
+        upperY <= camera.y * CANVAS_SCALE + ctx.canvas.clientHeight + size
+    );
 }
 
-function checkChunkBounds(chunk:Chunk){
-    return chunk.pos.x >= 0 &&chunk.pos.x < MAP_SIZE &&
-        chunk.pos.y >= 0 &&chunk.pos.y < MAP_SIZE;
-}
-
-function draw(color:Color){
-    if(currentTool != 1){
-        return;
-    }
-    for (let i = 0; i < 25; i++) {
-        incrimentBrush();
-        let chunk = getChunk(brushPos.x,brushPos.y);
-
-        if (checkChunkBounds(chunk) && chunk !== undefined ) {
-            let scaledX = (brushPos.x - chunk.pos.x * CHUNK_SIZE * CANVAS_SCALE) /CANVAS_SCALE;
-            let scaledY = (brushPos.y - chunk.pos.y * CHUNK_SIZE * CANVAS_SCALE) /CANVAS_SCALE;
-            chunk.draw(scaledX,scaledY,color);
+function draw(color: Color) {
+    if (currentTool != Tool.Brush) return;
+    for (let i = 0; i < 100; i++) {
+        lerpBrushPos();
+        let chunk = getChunk(brushPos.x, brushPos.y);
+        if (chunk !== null) {
+            let scaledX =
+                (brushPos.x - chunk.pos.x * CHUNK_SIZE * CANVAS_SCALE) /
+                CANVAS_SCALE;
+            let scaledY =
+                (brushPos.y - chunk.pos.y * CHUNK_SIZE * CANVAS_SCALE) /
+                CANVAS_SCALE;
+            chunk.draw(scaledX, scaledY, color);
         }
     }
 }
-
 
 $(() => {
     const $canvas = $("canvas");
@@ -260,22 +258,28 @@ $(() => {
         mousePos.y = ev.clientY - rect.top;
     });
 
-    $canvas.on("mousedown", () => {
-        lastClicked = {
-            x: mousePos.x + camera.x * CANVAS_SCALE,
-            y: mousePos.y + camera.y * CANVAS_SCALE,
-        };
-        brushPos = {
-            x: mousePos.x + camera.x * CANVAS_SCALE,
-            y: mousePos.y + camera.y * CANVAS_SCALE,
-        };
-        isMouseDown = true;
-
+    $canvas.on("mousedown", (ev) => {
+        if (ev.which == 1) {
+            brushPos = {
+                x: mousePos.x + camera.x * CANVAS_SCALE,
+                y: mousePos.y + camera.y * CANVAS_SCALE,
+            };
+            isMouseDown = true;
+        } else {
+            isMoving = true;
+        }
     });
 
     $canvas.on("mouseup", () => {
-
         isMouseDown = false;
+        isMoving = false;
+    });
+
+    $canvas.on("wheel", (ev) => {
+        const wheel = <WheelEvent>ev.originalEvent;
+        const delta = clamp(wheel.deltaY, -1, 1);
+        CANVAS_SCALE = clamp(CANVAS_SCALE - delta, 1, 16);
+        resizeCanvas(ctx);
     });
 
     window.addEventListener("resize", () => {
@@ -289,6 +293,14 @@ $(() => {
         });
     });
 
+    $("#download").on("click", () => {
+        var link = document.createElement("a");
+        link.href = ctx.canvas.toDataURL("image/jpg");
+        link.download = "Download.jpg";
+        document.body.appendChild(link);
+        link.click();
+    });
+
     // Make chunks here
     initializeChunks();
 
@@ -299,14 +311,24 @@ $(() => {
     requestAnimationFrame(() => loop(ctx));
 });
 
-
 async function loop(ctx: CanvasRenderingContext2D) {
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    setCamera();
+    moveCamera(ctx);
 
     if (isMouseDown) {
-        let color = setColor(ctx);
+        let color: Color = { r: 0, g: 0, b: 0, a: 255 };
+        switch (currentTool) {
+            case Tool.Picker:
+                pick(ctx);
+                break;
+
+            case Tool.Eraser:
+                currentTool = Tool.Brush;
+                $("#picker").val("#ffffff");
+        }
+
+        color = hexToRGBA();
         draw(color);
     }
 
@@ -315,7 +337,7 @@ async function loop(ctx: CanvasRenderingContext2D) {
         const pos = chunk.pos;
         const size = CHUNK_SIZE * CANVAS_SCALE;
 
-        if (isVisableChunk(pos,size,ctx)) {
+        if (isVisibleChunk(pos, size, ctx)) {
             await chunks[i].render(ctx);
         }
     }

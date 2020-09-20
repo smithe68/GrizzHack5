@@ -1,5 +1,7 @@
 :root {
-    --ui-color: rgb(25, 25, 25);
+    --ui-color: linear-gradient(to right, #355c7d, #6c5b7b, #c06c84);
+    --hover-color: rgba(255, 255, 255, 0.25);
+    --selected-color: rgba(255, 255, 255, 0.4);
 }
 
 * {
@@ -11,38 +13,75 @@
     font-family: "Press Start 2P", sans-serif;
     color: white;
     border-radius: 0;
+    outline: 0;
 }
 
 body {
     min-height: 100vh;
-    background: rgb(18, 18, 18);
+    background: var(--ui-color);
     overflow: hidden;
     user-select: none;
 }
 
 button {
     background: none;
+    border-radius: 0.25rem;
 }
 
 #tools > * {
     width: 48px;
     height: 48px;
+    margin: 0 0.5rem;
+}
+
+#download {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    background: var(--ui-color);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+
+    cursor: pointer;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+
+    img {
+        width: 32px;
+        height: 32px;
+    }
 }
 
 #tools {
     position: absolute;
-    left: 0;
-    top: 0;
+    left: 50%;
+    bottom: 0;
 
     grid-row-start: 2;
     grid-column-start: 1;
     background: var(--ui-color);
 
-    height: 100%;
-    width: 48px;
+    height: 96px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    transform: translate(-50%, 72px);
+    transition: 0.2s ease 0.1s;
+    border-radius: 0.5rem 0.5rem 0 0;
+
+    .header {
+        position: absolute;
+        top: 0.25rem;
+        left: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        font-family: "Roboto", sans-serif;
+        color: white;
+    }
 
     button {
         padding: 0.25rem;
@@ -53,12 +92,17 @@ button {
 
         &:hover {
             cursor: pointer;
-            background: rgba(100, 100, 255, 0.7);
+            background: var(--hover-color);
 
             img {
                 transform: scale(1.2);
             }
         }
+    }
+
+    &:hover {
+        transform: translate(-50%, 0);
+        transition: 0.2s ease 0.1s;
     }
 }
 
@@ -74,14 +118,16 @@ canvas {
 #title {
     position: absolute;
     left: 50%;
-    top: 0;
-    transform: translate(-50%, 0) scaleX(0.7);
+    top: 0.5rem;
+    transform: translate(-50%, 0) scaleX(0.8);
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.5);
     z-index: 1;
 
     background: var(--ui-color);
 
     padding: 0.5rem 1rem;
     font-size: 1.25rem;
+    border-radius: 0.5rem;
 }
 
 #picker {
@@ -94,12 +140,12 @@ canvas {
 }
 
 .selected {
-    background: rgba(100, 100, 255, 0.9);
+    background: var(--selected-color);
 }
 
 footer {
     position: absolute;
-    left: 0px;
+    left: -3.5rem;
     bottom: 10px;
     text-align: right;
     color: rgba(0, 0, 0, 0.4);

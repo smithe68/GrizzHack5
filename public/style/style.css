@@ -1,5 +1,7 @@
 :root {
-  --ui-color: rgb(25, 25, 25);
+  --ui-color: linear-gradient(to right, #355c7d, #6c5b7b, #c06c84);
+  --hover-color: rgba(255, 255, 255, 0.25);
+  --selected-color: rgba(255, 255, 255, 0.4);
 }
 
 * {
@@ -11,11 +13,12 @@
   font-family: "Press Start 2P", sans-serif;
   color: white;
   border-radius: 0;
+  outline: 0;
 }
 
 body {
   min-height: 100vh;
-  background: #121212;
+  background: var(--ui-color);
   overflow: hidden;
   -webkit-user-select: none;
      -moz-user-select: none;
@@ -25,34 +28,72 @@ body {
 
 button {
   background: none;
+  border-radius: 0.25rem;
 }
 
 #tools > * {
   width: 48px;
   height: 48px;
+  margin: 0 0.5rem;
+}
+
+#download {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  background: var(--ui-color);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+#download:hover {
+  -webkit-transform: scale(1.1);
+          transform: scale(1.1);
+}
+
+#download img {
+  width: 32px;
+  height: 32px;
 }
 
 #tools {
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 50%;
+  bottom: 0;
   -ms-grid-row: 2;
       grid-row-start: 2;
   -ms-grid-column: 1;
       grid-column-start: 1;
   background: var(--ui-color);
-  height: 100%;
-  width: 48px;
+  height: 96px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
-  -webkit-box-orient: vertical;
+  -webkit-box-orient: horizontal;
   -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+      -ms-flex-direction: row;
+          flex-direction: row;
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
+  -webkit-transform: translate(-50%, 72px);
+          transform: translate(-50%, 72px);
+  -webkit-transition: 0.2s ease 0.1s;
+  transition: 0.2s ease 0.1s;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+#tools .header {
+  position: absolute;
+  top: 0.25rem;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-family: "Roboto", sans-serif;
+  color: white;
 }
 
 #tools button {
@@ -65,12 +106,19 @@ button {
 
 #tools button:hover {
   cursor: pointer;
-  background: rgba(100, 100, 255, 0.7);
+  background: var(--hover-color);
 }
 
 #tools button:hover img {
   -webkit-transform: scale(1.2);
           transform: scale(1.2);
+}
+
+#tools:hover {
+  -webkit-transform: translate(-50%, 0);
+          transform: translate(-50%, 0);
+  -webkit-transition: 0.2s ease 0.1s;
+  transition: 0.2s ease 0.1s;
 }
 
 canvas {
@@ -85,13 +133,16 @@ canvas {
 #title {
   position: absolute;
   left: 50%;
-  top: 0;
-  -webkit-transform: translate(-50%, 0) scaleX(0.7);
-          transform: translate(-50%, 0) scaleX(0.7);
+  top: 0.5rem;
+  -webkit-transform: translate(-50%, 0) scaleX(0.8);
+          transform: translate(-50%, 0) scaleX(0.8);
+  -webkit-box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.5);
+          box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.5);
   z-index: 1;
   background: var(--ui-color);
   padding: 0.5rem 1rem;
   font-size: 1.25rem;
+  border-radius: 0.5rem;
 }
 
 #picker {
@@ -105,12 +156,12 @@ canvas {
 }
 
 .selected {
-  background: rgba(100, 100, 255, 0.9);
+  background: var(--selected-color);
 }
 
 footer {
   position: absolute;
-  left: 0px;
+  left: -3.5rem;
   bottom: 10px;
   text-align: right;
   color: rgba(0, 0, 0, 0.4);

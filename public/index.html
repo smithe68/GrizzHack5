@@ -22,15 +22,29 @@
     <body>
         <div id="title">PixelBoard</div>
 
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <canvas
+            id="canvas"
+            width="800"
+            height="600"
+            oncontextmenu="return false;"
+        ></canvas>
+
+        <div id="download">
+            <img src="images/icons/download.png" />
+        </div>
 
         <div id="tools">
+            <div class="header">Tools</div>
+
             <button>
-                <img src="images/icons/select.png" />
+                <img src="images/icons/move.png" />
             </button>
+
             <button>
                 <img src="images/icons/paint.png" />
             </button>
+
+            <input type="color" id="picker" value="#000000" />
 
             <button>
                 <img src="images/icons/dropper.png" />
@@ -39,12 +53,6 @@
             <button>
                 <img src="images/icons/eraser.png" />
             </button>
-            
-            <button>
-                <img src="images/icons/move.png" />
-            </button>
-
-            <input type="color" id="picker" value="#FF0000" />
         </div>
 
         <footer>Made by: Jakub S. & Evan S.</footer>
