@@ -10903,9 +10903,9 @@ class Chunk {
     }
     draw(x, y, color) {
         if (x >= 0 && x < this.buffer.width && y >= 0 && this.buffer.height) {
-            const xFloor = Math.floor(x);
-            const yFloor = Math.floor(y);
-            const pos = (yFloor * this.buffer.width + xFloor) * 4;
+            let xFloor = Math.floor(x);
+            let yFloor = Math.floor(y);
+            let pos = (yFloor * this.buffer.width + xFloor) * 4;
             this.buffer.data[pos] = color.r;
             this.buffer.data[pos + 1] = color.g;
             this.buffer.data[pos + 2] = color.b;
@@ -10936,6 +10936,29 @@ function resizeCanvas(ctx) {
     ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
     // I want to see the pixels
     ctx.imageSmoothingEnabled = false;
+}
+function pick(ctx) {
+    let chunkNumX = Math.floor(mousePos.x / (CHUNK_SIZE * CANVAS_SCALE));
+    let chunkNumY = Math.floor(mousePos.y / (CHUNK_SIZE * CANVAS_SCALE));
+    let chunk = chunks[chunkNumX * MAP_SIZE + chunkNumY];
+    let posX = (mousePos.x - chunkNumX * CHUNK_SIZE * CANVAS_SCALE) /
+        CANVAS_SCALE;
+    let posY = (mousePos.y - chunkNumY * CHUNK_SIZE * CANVAS_SCALE) /
+        CANVAS_SCALE;
+    let xFloor = Math.floor(posX);
+    let yFloor = Math.floor(posY);
+    let pos = (yFloor * chunk.buffer.width + xFloor) * 4;
+    let r = chunk.buffer.data[pos];
+    let g = chunk.buffer.data[pos + 1];
+    let b = chunk.buffer.data[pos + 2];
+    let colorString = "#";
+    colorString += r.toString(16);
+    console.log(colorString);
+    colorString += g.toString(16);
+    console.log(colorString);
+    colorString += b.toString(16);
+    console.log(colorString);
+    jquery_1.default("#picker").val(colorString);
 }
 jquery_1.default(() => {
     const $canvas = jquery_1.default("canvas");
@@ -10979,28 +11002,32 @@ jquery_1.default(() => {
 });
 function loop(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
-        ctx.fillStyle = "black";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         camera = {
             x: 0.9 * camera.x + 0.1 * cameraTarget.x,
             y: 0.9 * camera.y + 0.1 * cameraTarget.y,
         };
         if (isMouseDown) {
-            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(jquery_1.default("#color").val());
+            if (currentTool === 2) {
+                currentTool = 1;
+                pick(ctx);
+                console.log(jquery_1.default("#picker").val());
+            }
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(jquery_1.default("#picker").val());
             let color;
-            if (result != null) {
+            if (result !== null) {
                 color = {
                     r: parseInt(result[1], 16),
                     g: parseInt(result[2], 16),
                     b: parseInt(result[3], 16),
-                    a: 1,
+                    a: 255
                 };
             }
             else {
                 color = {
                     r: 0,
                     g: 0,
-                    b: 0,
+                    b: 255,
                     a: 1,
                 };
             }
@@ -11046,9 +11073,6 @@ function loop(ctx) {
         requestAnimationFrame(() => loop(ctx));
     });
 }
-jquery_1.default("#color").on("click", (_) => {
-    jquery_1.default("#popout").toggle();
-});
 // Get key input for moving the camera
 jquery_1.default(document).on("keydown", (ev) => {
     const event = ev.originalEvent;
